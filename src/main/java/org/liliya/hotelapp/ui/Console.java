@@ -19,7 +19,8 @@ public class Console {
     }
 
     public void start() {
-        while (true) {
+        boolean isWork = true;
+        while (isWork) {
             try {
                 showMenu();
                 int choice = scanner.nextInt();
@@ -30,7 +31,8 @@ public class Console {
                     case 3 -> releaseApartment();
                     case 4 -> getPaginatedAndSortedApartments();
                     case 5 -> {
-                        return;
+                        System.out.println("Exiting");
+                        isWork = false;
                     }
                     default -> System.out.println("\nInvalid option. Please try again.");
                 }
@@ -70,7 +72,7 @@ public class Console {
         if (!released) {
             throw new ReservationException("No apartments found with such id.");
         }
-        System.out.println("\nApartment successfully released");
+        System.out.println("Apartment successfully released");
     }
 
     private void getPaginatedAndSortedApartments() {
@@ -109,11 +111,14 @@ public class Console {
     }
 
     private void showMenu() {
-        System.out.println("\n--- Hotel application ---\n");
-        System.out.println("1. Register apartment");
-        System.out.println("2. Reserve an apartment");
-        System.out.println("3. Release an apartment");
-        System.out.println("4. Get apartments");
-        System.out.print("Select an option: ");
+        String menu = """
+        \n--- Hotel application ---
+        1. Register apartment
+        2. Reserve an apartment
+        3. Release an apartment
+        4. Get apartments
+        Select an option: """;
+
+        System.out.print(menu);
     }
 }
