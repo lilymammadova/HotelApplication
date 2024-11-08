@@ -15,4 +15,6 @@ public interface ApartmentService {
 
     List<Apartment> getPaginatedAndSortedApartments(int page, int size, Comparator<Apartment> comparator);
 
+    List<Apartment> getAllApartments();
+
 }
