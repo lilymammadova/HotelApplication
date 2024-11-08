@@ -3,11 +3,11 @@ name: CI/CD with Jar Build and Test
 on:
   pull_request:
     branches:
-      - main
+      - master
 
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build_and_test:
