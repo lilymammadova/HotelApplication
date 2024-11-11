@@ -52,4 +52,7 @@ public class ApartmentServiceImpl implements ApartmentService {
                 .limit(size)
                 .collect(Collectors.toList());
     }
+    public List<Apartment> getAllApartments(){
+        return apartments;
+    }
 }

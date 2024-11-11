@@ -13,9 +13,9 @@ public class Console {
     private final ApartmentService apartmentService;
     private final Scanner scanner;
 
-    public Console(ApartmentService apartmentService) {
+    public Console(ApartmentService apartmentService, Scanner scanner) {
         this.apartmentService = apartmentService;
-        this.scanner = new Scanner(System.in);
+        this.scanner = scanner;
     }
 
     public void start() {
