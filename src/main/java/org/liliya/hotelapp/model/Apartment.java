@@ -1,10 +1,15 @@
 package org.liliya.hotelapp.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Apartment {
+public class Apartment implements Serializable {
     private int id;
     private double price;
+
+    public Apartment() {
+    }
+
     private ReservationStatus reservationStatus;
     private Client client;
 
