@@ -3,20 +3,35 @@ package org.liliya.hotelapp.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.liliya.hotelapp.configuration.Configuration;
 import org.liliya.hotelapp.model.Apartment;
 import org.liliya.hotelapp.model.Client;
 import org.liliya.hotelapp.model.ReservationStatus;
-import org.mockito.InjectMocks;
+import org.liliya.hotelapp.persistence.StatePersistence;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 public class ApartmentServiceImplTest {
+    @Mock
+    private Configuration configuration;
+    @Mock
+    private StatePersistence<List<Apartment>> statePersistence;
+    private ApartmentService apartmentService;
 
-    private final ApartmentService apartmentService = new ApartmentServiceImpl();
+    @BeforeEach
+    void setUp() {
+        when(statePersistence.loadState(any())).thenReturn(new ArrayList<>());
+        apartmentService = new ApartmentServiceImpl(statePersistence, configuration);
+    }
 
     @Test
     void givenPrice_WhenRegister_ThenApartmentIsAdded() {
@@ -31,6 +46,7 @@ public class ApartmentServiceImplTest {
 
     @Test
     void givenAvailableApartment_WhenReserve_ThenApartmentIsReserved() {
+        when(configuration.statusChangeAvailability()).thenReturn(true);
         Client client = new Client("client");
         apartmentService.register(100);
         boolean isReserved = apartmentService.reserve(client);
@@ -53,6 +69,7 @@ public class ApartmentServiceImplTest {
 
     @Test
     void givenReservedApartment_WhenRelease_ThenApartmentIsAvailable() {
+        when(configuration.statusChangeAvailability()).thenReturn(true);
         Client client = new Client("client");
         apartmentService.register(200);
         apartmentService.reserve(client);

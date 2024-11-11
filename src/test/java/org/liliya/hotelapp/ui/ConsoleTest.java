@@ -1,13 +1,12 @@
 package org.liliya.hotelapp.ui;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.liliya.hotelapp.model.Apartment;
 import org.liliya.hotelapp.model.Client;
 import org.liliya.hotelapp.model.ReservationStatus;
+import org.liliya.hotelapp.persistence.StatePersistence;
 import org.liliya.hotelapp.service.ApartmentService;
-import org.liliya.hotelapp.service.ApartmentServiceImpl;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,9 +18,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.when;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +28,8 @@ public class ConsoleTest {
     private ApartmentService apartmentService;
     @Mock
     private Scanner scanner;
+    @Mock
+    private StatePersistence<List<Apartment>> statePersistence;
     @InjectMocks
     private Console console;
 
@@ -99,4 +99,12 @@ public class ConsoleTest {
         console.start();
         verify(apartmentService).getPaginatedAndSortedApartments(eq(page), eq(size), any(Comparator.class));
     }
+
+    @Test
+    void givenApartmentList_WhenExiting_ThenListIsSaved() {
+        when(scanner.nextInt()).thenReturn(5);
+        console.start();
+        verify(statePersistence).saveState(apartmentService.getAllApartments());
+    }
+
 }

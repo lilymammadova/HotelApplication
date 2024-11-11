@@ -1,15 +1,19 @@
 package org.liliya.hotelapp.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  *  Further could be added more fields such as passport, surname, contacts etc.
  */
-public class Client {
+public class Client implements Serializable {
     private String name;
 
     public Client(String name) {
         this.name = name;
+    }
+
+    public Client() {
     }
 
     public String getName() {

@@ -3,6 +3,7 @@ package org.liliya.hotelapp.ui;
 import org.liliya.hotelapp.exception.ReservationException;
 import org.liliya.hotelapp.model.Apartment;
 import org.liliya.hotelapp.model.Client;
+import org.liliya.hotelapp.persistence.StatePersistence;
 import org.liliya.hotelapp.service.ApartmentService;
 
 import java.util.Comparator;
@@ -12,10 +13,12 @@ import java.util.Scanner;
 public class Console {
     private final ApartmentService apartmentService;
     private final Scanner scanner;
+    private final StatePersistence<List<Apartment>> statePersistence;
 
-    public Console(ApartmentService apartmentService, Scanner scanner) {
+    public Console(ApartmentService apartmentService, Scanner scanner, StatePersistence<List<Apartment>> statePersistence) {
         this.apartmentService = apartmentService;
         this.scanner = scanner;
+        this.statePersistence = statePersistence;
     }
 
     public void start() {
@@ -31,7 +34,7 @@ public class Console {
                     case 3 -> releaseApartment();
                     case 4 -> getPaginatedAndSortedApartments();
                     case 5 -> {
-                        System.out.println("Exiting");
+                        saveStateAndExit();
                         isWork = false;
                     }
                     default -> System.out.println("\nInvalid option. Please try again.");
@@ -97,6 +100,12 @@ public class Console {
         apartments.forEach(System.out::println);
     }
 
+    private void saveStateAndExit() {
+        System.out.println("Storing state...");
+        statePersistence.saveState(apartmentService.getAllApartments());
+        System.out.println("State stored. Exiting...");
+    }
+
     private Comparator<Apartment> getComparator(String sortBy) {
         Comparator<Apartment> comparator;
 
@@ -112,12 +121,13 @@ public class Console {
 
     private void showMenu() {
         String menu = """
-        \n--- Hotel application ---
-        1. Register apartment
-        2. Reserve an apartment
-        3. Release an apartment
-        4. Get apartments
-        Select an option: """;
+                \n--- Hotel application ---
+                1. Register apartment
+                2. Reserve an apartment
+                3. Release an apartment
+                4. Get apartments
+                5. Save state and exit
+                Select an option: """;
 
         System.out.print(menu);
     }
