@@ -29,7 +29,7 @@ public class StatePersistenceImpl<T> implements StatePersistence<T> {
     @Override
     public <T> T loadState(TypeReference<T> tTypeReference) {
         try {
-            return objectMapper.readValue(new File(filePath), tTypeReference);
+            return objectMapper.readValue(getClass().getClassLoader().getResourceAsStream(filePath), tTypeReference);
         } catch (IOException exception) {
             exception.printStackTrace();
             return null;

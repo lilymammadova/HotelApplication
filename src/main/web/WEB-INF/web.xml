@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+
+    <display-name>HotelApp</display-name>
+
+    <servlet>
+        <servlet-name>AppServlet</servlet-name>
+        <servlet-class>org.liliya.hotelapp.controller.AppServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>AppServlet</servlet-name>
+        <url-pattern>/app</url-pattern>
+    </servlet-mapping>
+
+    <context-param>
+        <param-name>paramName</param-name>
+        <param-value>paramValue</param-value>
+    </context-param>
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+
+</web-app>
