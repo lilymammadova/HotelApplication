@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,9 +38,9 @@ public class StatePersistenceImplTest {
         TypeReference<List<Apartment>> typeReference = new TypeReference<>() {
         };
         List<Apartment> expectedApartments = new ArrayList<>();
-        when(objectMapper.readValue(any(File.class), ArgumentMatchers.eq(typeReference))).thenReturn(expectedApartments);
+        when(objectMapper.readValue(any(InputStream.class), ArgumentMatchers.eq(typeReference))).thenReturn(expectedApartments);
         List<Apartment> resultList = statePersistence.loadState(typeReference);
-        verify(objectMapper, times(1)).readValue(any(File.class), ArgumentMatchers.eq(typeReference));
+        verify(objectMapper, times(1)).readValue(any(InputStream.class), ArgumentMatchers.eq(typeReference));
         assert resultList == expectedApartments;
     }
 

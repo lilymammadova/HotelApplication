@@ -75,8 +75,18 @@ public class ApartmentServiceImpl implements ApartmentService {
     }
 
     private void addAllApartments() {
-        apartments.addAll(statePersistence.loadState(new TypeReference<List<Apartment>>() {
-        }));
+        System.out.println("Attempting to load apartments...");
+        List<Apartment> loadedApartments = statePersistence.loadState(new TypeReference<>() {
+        });
+
+        if (loadedApartments != null) {
+            System.out.println("Loaded apartments from JSON: " + loadedApartments.size() + " entries.");
+            apartments.addAll(loadedApartments);
+        } else {
+            System.out.println("No apartments loaded; clearing the list.");
+            apartments.clear();
+        }
         idCounter = apartments.size() + 1;
+        System.out.println("Current idCounter: " + idCounter);
     }
 }
