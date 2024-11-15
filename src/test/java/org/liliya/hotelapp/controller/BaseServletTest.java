@@ -3,11 +3,13 @@ package org.liliya.hotelapp.controller;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import static org.mockito.Mockito.mock;
+import org.mockito.Mock;
 
 public abstract class BaseServletTest {
-    protected HttpServletRequest request = mock(HttpServletRequest.class);
-    protected HttpServletResponse response = mock(HttpServletResponse.class);
-    protected RequestDispatcher dispatcher = mock(RequestDispatcher.class);
+    @Mock
+    protected HttpServletRequest request;
+    @Mock
+    protected HttpServletResponse response;
+    @Mock
+    protected RequestDispatcher dispatcher;
 }
