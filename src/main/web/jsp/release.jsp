@@ -62,11 +62,9 @@
 <h2>Release Apartment</h2>
 
 <div class="form-container">
-  <form action="app" method="POST">
+  <form action="${pageContext.request.contextPath}/app/release" method="POST">
     <label for="apartmentId">Apartment ID:</label>
     <input type="text" id="apartmentId" name="apartmentId" required>
-
-    <input type="hidden" name="option" value="releaseApartment">
     <input type="submit" value="Confirm Release">
   </form>
 </div>

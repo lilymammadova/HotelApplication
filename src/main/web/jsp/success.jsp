@@ -37,7 +37,7 @@
 
 <h1>${message}</h1>
 
-<a href="index.jsp" class="back-link">Go back</a>
+<a href="${pageContext.request.contextPath}/index.jsp" class="back-link">Go back</a>
 
 </body>
 </html>

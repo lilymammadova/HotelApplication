@@ -62,11 +62,9 @@
 <h1>Register an Apartment</h1>
 
 <div class="form-container">
-  <form action="app" method="POST">
+  <form action="${pageContext.request.contextPath}/app/register" method="POST">
     <label for="price">Enter Price:</label>
     <input type="text" id="price" name="price" required>
-
-    <input type="hidden" name="option" value="registerApartment">
 
     <input type="submit" value="Register Apartment">
   </form>

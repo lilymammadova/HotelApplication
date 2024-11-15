@@ -63,7 +63,7 @@
 <h2>Get Paginated and Sorted Apartments</h2>
 
 <div class="form-container">
-  <form action="app" method="POST">
+  <form action="${pageContext.request.contextPath}/app/getPaginated" method="POST">
     <label for="pageNumber">Page Number:</label>
     <input type="number" id="pageNumber" name="pageNumber" min="1" required>
 
@@ -77,8 +77,6 @@
       <option value="availability">Availability</option>
       <option value="clientname">Client Name</option>
     </select>
-
-    <input type="hidden" name="option" value="getPaginatedAndSortedApartments">
     <input type="submit" value="Get Apartments">
   </form>
 </div>

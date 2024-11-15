@@ -49,8 +49,7 @@
 <h2>Save Current State</h2>
 
 <div class="form-container">
-  <form action="app" method="POST">
-    <input type="hidden" name="option" value="saveState">
+  <form action="${pageContext.request.contextPath}/app/save" method="POST">
     <input type="submit" value="Save State">
   </form>
 </div>

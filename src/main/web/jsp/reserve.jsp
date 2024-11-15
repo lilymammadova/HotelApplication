@@ -62,12 +62,9 @@
 <h2>Reserve an Apartment</h2>
 
 <div class="form-container">
-  <form action="app" method="POST">
+  <form action="${pageContext.request.contextPath}/app/reserve" method="POST">
     <label for="clientName">Client Name:</label>
     <input type="text" id="clientName" name="clientName" required>
-
-    <input type="hidden" name="option" value="reserveApartment">
-
     <input type="submit" value="Confirm Reservation">
   </form>
 </div>

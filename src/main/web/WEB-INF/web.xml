@@ -7,13 +7,58 @@
     <display-name>HotelApp</display-name>
 
     <servlet>
-        <servlet-name>AppServlet</servlet-name>
-        <servlet-class>org.liliya.hotelapp.controller.AppServlet</servlet-class>
+        <servlet-name>ShowFormServlet</servlet-name>
+        <servlet-class>org.liliya.hotelapp.controller.ShowFormServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>AppServlet</servlet-name>
+        <servlet-name>ShowFormServlet</servlet-name>
         <url-pattern>/app</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RegisterServlet</servlet-name>
+        <servlet-class>org.liliya.hotelapp.controller.RegisterServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RegisterServlet</servlet-name>
+        <url-pattern>/app/register</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ReserveServlet</servlet-name>
+        <servlet-class>org.liliya.hotelapp.controller.ReserveServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ReserveServlet</servlet-name>
+        <url-pattern>/app/reserve</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ReleaseServlet</servlet-name>
+        <servlet-class>org.liliya.hotelapp.controller.ReleaseServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ReleaseServlet</servlet-name>
+        <url-pattern>/app/release</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>SaveApartmentsServlet</servlet-name>
+        <servlet-class>org.liliya.hotelapp.controller.SaveApartmentsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SaveApartmentsServlet</servlet-name>
+        <url-pattern>/app/save</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>PaginationServlet</servlet-name>
+        <servlet-class>org.liliya.hotelapp.controller.PaginationServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PaginationServlet</servlet-name>
+        <url-pattern>/app/getPaginated</url-pattern>
     </servlet-mapping>
 
     <context-param>
