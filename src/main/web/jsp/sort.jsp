@@ -72,10 +72,9 @@
 
     <label for="sortParam">Sort by:</label>
     <select name="sortParam" id="sortParam">
-      <option value="apartmentid">Apartment ID</option>
+      <option value="id">Apartment ID</option>
       <option value="price">Price</option>
-      <option value="availability">Availability</option>
-      <option value="clientname">Client Name</option>
+      <option value="status">Availability</option>
     </select>
     <input type="submit" value="Get Apartments">
   </form>

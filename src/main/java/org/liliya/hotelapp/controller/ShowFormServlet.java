@@ -25,7 +25,6 @@ public class ShowFormServlet extends AppServlet {
             case "2" -> page = "/jsp/reserve.jsp";
             case "3" -> page = "/jsp/release.jsp";
             case "4" -> page = "/jsp/sort.jsp";
-            case "5" -> page = "/jsp/save.jsp";
             default -> page = "/jsp/error.jsp";
         }
         RequestDispatcher dispatcher = request.getRequestDispatcher(page);
