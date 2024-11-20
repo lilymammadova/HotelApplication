@@ -5,11 +5,21 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class Configuration {
+    private static Configuration instance;
     private boolean statusChangeAvailability;
-    private String filePath;
+    private String dbUrl;
+    private String dbUsername;
+    private String dbPassword;
 
-    public Configuration() {
+    private Configuration() {
         loadProperties();
+    }
+
+    public static Configuration getInstance() {
+        if (instance == null) {
+            instance = new Configuration();
+        }
+        return instance;
     }
 
     private void loadProperties() {
@@ -18,8 +28,9 @@ public class Configuration {
             if (inputStream != null) {
                 properties.load(inputStream);
                 statusChangeAvailability = Boolean.parseBoolean(properties.getProperty("statusChangeAvailability", "false"));
-                filePath = properties.getProperty("filePath");
-
+                dbUrl = properties.getProperty("db.url");
+                dbUsername = properties.getProperty("db.username");
+                dbPassword = properties.getProperty("db.password");
             }
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -27,11 +38,19 @@ public class Configuration {
         }
     }
 
-    public boolean statusChangeAvailability() {
-        return statusChangeAvailability;
+    public String getDbUrl() {
+        return dbUrl;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getDbUsername() {
+        return dbUsername;
+    }
+
+    public String getDbPassword() {
+        return dbPassword;
+    }
+
+    public boolean statusChangeAvailability() {
+        return statusChangeAvailability;
     }
 }

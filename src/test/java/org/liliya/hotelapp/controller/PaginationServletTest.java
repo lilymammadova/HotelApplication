@@ -13,13 +13,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class PaginationServletTest extends BaseServletTest {
@@ -37,7 +34,7 @@ public class PaginationServletTest extends BaseServletTest {
 
         Apartment apartment = new Apartment(1, 60, ReservationStatus.AVAILABLE, null);
         List<Apartment> apartments = Collections.singletonList(apartment);
-        when(apartmentService.getPaginatedAndSortedApartments(anyInt(), anyInt(), any(Comparator.class)))
+        when(apartmentService.getPaginatedAndSortedApartments(anyInt(), anyInt(), anyString()))
                 .thenReturn(apartments);
 
         paginationServlet.doPost(request, response);

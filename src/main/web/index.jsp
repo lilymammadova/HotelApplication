@@ -67,7 +67,6 @@
       <option value="2">Reserve an apartment</option>
       <option value="3">Release an apartment</option>
       <option value="4">Get apartments</option>
-      <option value="5">Save state and exit</option>
     </select>
 
     <input type="submit" value="Submit">
