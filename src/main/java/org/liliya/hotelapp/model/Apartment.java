@@ -1,17 +1,27 @@
 package org.liliya.hotelapp.model;
 
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.util.Objects;
 
+@Entity
+@Table(name = "apartments")
 public class Apartment implements Serializable {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+    @Column(name = "price", nullable = false)
     private double price;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ReservationStatus reservationStatus;
+    @ManyToOne
+    @JoinColumn(name = "client_id")
+    private Client client;
 
     public Apartment() {
     }
-
-    private ReservationStatus reservationStatus;
-    private Client client;
 
     public Apartment(int id, double price, ReservationStatus reservationStatus, Client client) {
         this.id = id;
