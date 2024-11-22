@@ -1,62 +1,45 @@
 package org.liliya.hotelapp.service;
 
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.liliya.hotelapp.configuration.Configuration;
 import org.liliya.hotelapp.model.Apartment;
 import org.liliya.hotelapp.model.Client;
 import org.liliya.hotelapp.model.ReservationStatus;
-import org.liliya.hotelapp.persistence.DatabaseConnection;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ApartmentServiceImpl implements ApartmentService {
+    private final SessionFactory sessionFactory;
     private final Configuration configuration;
-    private final DatabaseConnection databaseConnection;
 
-    public ApartmentServiceImpl(DatabaseConnection databaseConnection) {
+    public ApartmentServiceImpl(SessionFactory sessionFactory) {
         this.configuration = Configuration.getInstance();
-        this.databaseConnection = databaseConnection;
+        this.sessionFactory = sessionFactory;
     }
-
-    private static final String INSERT_APARTMENT_QUERY = "INSERT INTO apartments (price, status) VALUES (?, ?)";
-    private static final String INSERT_CLIENT_QUERY = "INSERT INTO clients (name) VALUES (?)";
-    private static final String FIND_AVAILABLE_APARTMENT_QUERY = "SELECT id FROM apartments WHERE status = ? LIMIT 1";
-    private static final String UPDATE_APARTMENT_AFTER_RESERVE_QUERY = "UPDATE apartments SET status = ?, client_id = ? WHERE id = ?";
-    private static final String FIND_CLIENT_QUERY = "SELECT client_id FROM apartments WHERE id = ?";
-    private static final String DELETE_CLIENT_QUERY = "DELETE FROM clients WHERE id = ?";
-    private static final String UPDATE_APARTMENT_AFTER_RELEASE_QUERY = "UPDATE apartments SET status = ?, client_id = NULL WHERE id = ?";
-    private static final String GET_PAGINATED_SORTED_APARTMENTS_QUERY = """
-                SELECT a.id, a.price, a.status, c.id AS client_id, c.name AS client_name
-                FROM apartments a
-                LEFT JOIN clients c ON a.client_id = c.id
-                ORDER BY %s
-                LIMIT ? OFFSET ?
-            """;
 
     @Override
     public int register(double price) {
         int generatedId = -1;
-        try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(INSERT_APARTMENT_QUERY, PreparedStatement.RETURN_GENERATED_KEYS)
-        ) {
-            statement.setDouble(1, price);
-            statement.setString(2, ReservationStatus.AVAILABLE.name());
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
 
-            int rowsInserted = statement.executeUpdate();
-            if (rowsInserted > 0) {
-                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        generatedId = generatedKeys.getInt(1);
-                        System.out.println("Apartment registered with ID: " + generatedId);
-                    }
-                }
+            Apartment apartment = new Apartment();
+            apartment.setPrice(price);
+            apartment.setReservationStatus(ReservationStatus.AVAILABLE);
+            apartment.setClient(null);
+
+            generatedId = (int) session.save(apartment);
+
+            transaction.commit();
+        } catch (HibernateException e) {
+            if (transaction != null) {
+                transaction.rollback();
             }
-
-        } catch (SQLException e) {
             e.printStackTrace();
         }
         return generatedId;
@@ -67,26 +50,28 @@ public class ApartmentServiceImpl implements ApartmentService {
         if (!configuration.statusChangeAvailability()) {
             return false;
         }
-        try (Connection connection = databaseConnection.getConnection()) {
-            connection.setAutoCommit(false);
 
-            int clientId = insertClient(connection, client);
+        Transaction transaction;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+
+            int clientId = insertClient(session, client);
             if (clientId == -1) {
-                connection.rollback();
+                transaction.rollback();
                 return false;
             }
-            int apartmentId = findAvailableApartment(connection);
+            int apartmentId = findAvailableApartment(session);
             if (apartmentId == -1) {
-                connection.rollback();
+                transaction.rollback();
                 return false;
             }
-            if (updateApartmentAfterReserve(connection, apartmentId, clientId)) {
-                connection.commit();
+            if (updateApartmentAfterReserve(session, apartmentId, clientId)) {
+                transaction.commit();
                 return true;
             } else {
-                connection.rollback();
+                transaction.rollback();
             }
-        } catch (SQLException e) {
+        } catch (HibernateException e) {
             e.printStackTrace();
         }
         return false;
@@ -97,123 +82,115 @@ public class ApartmentServiceImpl implements ApartmentService {
         if (!configuration.statusChangeAvailability()) {
             return false;
         }
-        try (Connection connection = databaseConnection.getConnection()) {
-            connection.setAutoCommit(false);
-            Integer clientId = findClientByApartmentId(connection, id);
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            Integer clientId = findClientByApartmentId(session, id);
             if (clientId != null) {
-                deleteClient(connection, clientId);
+                deleteClient(session, clientId);
             }
-            if (updateApartmentAfterRelease(connection, id)) {
-                connection.commit();
+
+            if (updateApartmentAfterRelease(id, session)) {
+                transaction.commit();
                 return true;
             } else {
-                connection.rollback();
+                transaction.rollback();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (HibernateException e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
         }
         return false;
     }
-
 
     @Override
     public List<Apartment> getPaginatedAndSortedApartments(int page, int size, String sortBy) {
         List<Apartment> apartments = new ArrayList<>();
 
-        try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(GET_PAGINATED_SORTED_APARTMENTS_QUERY.formatted(sortBy))) {
-
+        try (Session session = sessionFactory.openSession()) {
             int offset = (page - 1) * size;
 
-            statement.setInt(1, size);
-            statement.setInt(2, offset);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    Client client = null;
-                    int clientId = resultSet.getInt("client_id");
-                    if (clientId > 0) {
-                        client = new Client(clientId, resultSet.getString("client_name"));
-                    }
-                    Apartment apartment = new Apartment(
-                            resultSet.getInt("id"),
-                            resultSet.getDouble("price"),
-                            ReservationStatus.valueOf(resultSet.getString("status")),
-                            client
-                    );
-                    apartments.add(apartment);
-                }
-            }
-        } catch (SQLException e) {
+            String hql = "FROM Apartment a LEFT JOIN FETCH a.client ORDER BY a." + sortBy;
+            apartments = session.createQuery(hql, Apartment.class)
+                    .setFirstResult(offset)
+                    .setMaxResults(size)
+                    .getResultList();
+        } catch (HibernateException e) {
             e.printStackTrace();
         }
 
         return apartments;
     }
 
-    private int insertClient(Connection connection, Client client) throws SQLException {
-        try (PreparedStatement insertClientStatement = connection.
-                prepareStatement(INSERT_CLIENT_QUERY, PreparedStatement.RETURN_GENERATED_KEYS)) {
-            insertClientStatement.setString(1, client.getName());
-            insertClientStatement.executeUpdate();
+    private int insertClient(Session session, Client client) {
+        try {
+            return (int) session.save(client);
+        } catch (HibernateException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
 
-            try (ResultSet generatedKeys = insertClientStatement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return generatedKeys.getInt(1);
-                }
-            }
+    private int findAvailableApartment(Session session) {
+        List<Apartment> availableApartments = session.createQuery("FROM Apartment where reservationStatus =:status", Apartment.class)
+                .setParameter("status", ReservationStatus.AVAILABLE)
+                .setMaxResults(1)
+                .getResultList();
+
+        if (!availableApartments.isEmpty()) {
+            return availableApartments.get(0).getId();
         }
         return -1;
     }
 
-
-    private int findAvailableApartment(Connection connection) throws SQLException {
-        try (PreparedStatement findStatement = connection.prepareStatement(FIND_AVAILABLE_APARTMENT_QUERY)) {
-            findStatement.setString(1, ReservationStatus.AVAILABLE.name());
-            try (ResultSet resultSet = findStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt("id");
+    private boolean updateApartmentAfterReserve(Session session, int apartmentId, int clientId) {
+        try {
+            Apartment apartment = session.get(Apartment.class, apartmentId);
+            if (apartment != null) {
+                if (apartment.getClient() != null) {
+                    return false;
                 }
+
+                apartment.setReservationStatus(ReservationStatus.RESERVED);
+                Client client = session.get(Client.class, clientId);
+                apartment.setClient(client);
+                session.merge(apartment);
+                return true;
             }
+        } catch (HibernateException e) {
+            e.printStackTrace();
         }
-        return -1;
+        return false;
     }
 
-    private boolean updateApartmentAfterReserve(Connection connection, int apartmentId, int clientId) throws SQLException {
-        try (PreparedStatement updateStatement = connection.prepareStatement(UPDATE_APARTMENT_AFTER_RESERVE_QUERY)) {
-            updateStatement.setString(1, ReservationStatus.RESERVED.name());
-            updateStatement.setInt(2, clientId);
-            updateStatement.setInt(3, apartmentId);
-            return updateStatement.executeUpdate() > 0;
-        }
-    }
-
-    private boolean updateApartmentAfterRelease(Connection connection, int apartmentId) throws SQLException {
-        try (PreparedStatement updateApartmentStatement = connection.prepareStatement(UPDATE_APARTMENT_AFTER_RELEASE_QUERY)) {
-            updateApartmentStatement.setString(1, ReservationStatus.AVAILABLE.name());
-            updateApartmentStatement.setInt(2, apartmentId);
-            return updateApartmentStatement.executeUpdate() > 0;
-        }
-    }
-
-
-    private Integer findClientByApartmentId(Connection connection, int apartmentId) throws SQLException {
-        try (PreparedStatement findClientStatement = connection.prepareStatement(FIND_CLIENT_QUERY)) {
-            findClientStatement.setInt(1, apartmentId);
-            try (ResultSet resultSet = findClientStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt("client_id");
-                }
+    private Integer findClientByApartmentId(Session session, int apartmentId) {
+        try {
+            Apartment apartment = session.get(Apartment.class, apartmentId);
+            if (apartment != null && apartment.getClient() != null) {
+                return apartment.getClient().getId();
             }
+        } catch (HibernateException e) {
+            e.printStackTrace();
         }
         return null;
     }
 
-    private void deleteClient(Connection connection, int clientId) throws SQLException {
-        try (PreparedStatement deleteClientStatement = connection.prepareStatement(DELETE_CLIENT_QUERY)) {
-            deleteClientStatement.setInt(1, clientId);
-            deleteClientStatement.executeUpdate();
+    private void deleteClient(Session session, int clientId) {
+        Client client = session.get(Client.class, clientId);
+        if (client != null) {
+            session.remove(client);
         }
     }
 
+    private boolean updateApartmentAfterRelease(int apartmentId, Session session) {
+        Apartment apartment = session.get(Apartment.class, apartmentId);
+        if (apartment != null) {
+            apartment.setReservationStatus(ReservationStatus.AVAILABLE);
+            apartment.setClient(null);
+            session.merge(apartment);
+            return true;
+        }
+        return false;
+    }
 }

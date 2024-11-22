@@ -1,121 +1,140 @@
 package org.liliya.hotelapp.service;
 
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.liliya.hotelapp.model.Apartment;
 import org.liliya.hotelapp.model.Client;
 import org.liliya.hotelapp.model.ReservationStatus;
-import org.liliya.hotelapp.persistence.DatabaseConnection;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ApartmentServiceImplTest {
     @Mock
-    private DatabaseConnection databaseConnection;
+    private SessionFactory sessionFactory;
     @Mock
-    private Connection connection;
+    private Transaction transaction;
     @Mock
-    private PreparedStatement preparedStatement;
+    private Session session;
     @Mock
-    private ResultSet resultSet;
+    private Query query;
 
-    private ApartmentServiceImpl apartmentService;
+    private ApartmentService apartmentService;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        apartmentService = new ApartmentServiceImpl(databaseConnection);
-        when(databaseConnection.getConnection()).thenReturn(connection);
+    void setUp() {
+        apartmentService = new ApartmentServiceImpl(sessionFactory);
+        when(sessionFactory.openSession()).thenReturn(session);
     }
 
     @Test
-    void register_ShouldReturnGeneratedId() throws SQLException {
+    void givenValidPrice_whenRegister_thenApartmentShouldBeAddedToDatabase() {
         double price = 200.0;
         int generatedId = 1;
 
-        when(preparedStatement.executeUpdate()).thenReturn(1);
-        when(preparedStatement.getGeneratedKeys()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.getInt(1)).thenReturn(generatedId);
-        when(connection.prepareStatement(anyString(), eq(PreparedStatement.RETURN_GENERATED_KEYS)))
-                .thenReturn(preparedStatement);
+        when(session.save(any(Apartment.class))).thenReturn(generatedId);
+        when(session.beginTransaction()).thenReturn(transaction);
 
         int result = apartmentService.register(price);
 
         assertEquals(generatedId, result);
 
-        verify(preparedStatement).setDouble(1, price);
-        verify(preparedStatement).setString(2, ReservationStatus.AVAILABLE.name());
-        verify(preparedStatement).executeUpdate();
+        verify(session).save(any(Apartment.class));
+        verify(session).beginTransaction();
+        verify(transaction).commit();
+        verify(session).close();
     }
 
     @Test
-    void reserve_ShouldReturnTrue_WhenReservationSuccessful() throws SQLException {
+    void givenClientName_whenReserve_ThenClientShouldBeAddedToDatabase() {
         Client client = new Client("Test Client");
         int clientId = 1;
         int apartmentId = 2;
 
-        when(connection.prepareStatement(anyString(), anyInt())).thenReturn(preparedStatement);
-        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(preparedStatement.executeUpdate()).thenReturn(1);
-        when(preparedStatement.getGeneratedKeys()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.getInt(1)).thenReturn(clientId);
-        when(resultSet.getInt("id")).thenReturn(apartmentId);
+        Apartment availableApartment = new Apartment();
+        availableApartment.setId(apartmentId);
+
+        List<Apartment> availableApartments = new ArrayList<>();
+        availableApartments.add(availableApartment);
+
+        when(session.save(any(Client.class))).thenReturn(clientId);
+        when(session.beginTransaction()).thenReturn(transaction);
+        when(session.createQuery(anyString(), eq(Apartment.class)))
+                .thenReturn(query);
+        when(query.setParameter("status", ReservationStatus.AVAILABLE)).thenReturn(query);
+        when(query.setMaxResults(1)).thenReturn(query);
+        when(query.getResultList()).thenReturn(availableApartments);
+        when(session.get(Apartment.class, apartmentId)).thenReturn(availableApartment);
+        when(session.merge(any(Apartment.class))).thenReturn(availableApartment);
 
         boolean result = apartmentService.reserve(client);
 
         assertTrue(result);
 
-        verify(connection).setAutoCommit(false);
-        verify(connection).commit();
+        verify(session).beginTransaction();
+        verify(session).save(client);
+        verify(session).createQuery("FROM Apartment where reservationStatus =:status", Apartment.class);
+        verify(query).setParameter("status", ReservationStatus.AVAILABLE);
+        verify(query).getResultList();
+        verify(transaction).commit();
+        verify(session).close();
     }
 
     @Test
-    void release_ShouldReturnTrue_WhenApartmentReleasedSuccessfully() throws SQLException {
+    void givenApartmentId_whenRelease_ThenClientShouldBeRemovedFromDatabase() {
         int apartmentId = 1;
         int clientId = 10;
+        Client client = new Client(10, "Test Client");
+        Apartment apartment = new Apartment(1, 200, ReservationStatus.RESERVED, client);
 
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.getInt("client_id")).thenReturn(clientId);
-        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(preparedStatement.executeUpdate()).thenReturn(1);
+        when(session.get(Apartment.class, apartmentId)).thenReturn(apartment);
+        when(session.beginTransaction()).thenReturn(transaction);
+        when(session.get(Client.class, clientId)).thenReturn(client);
+        doNothing().when(session).remove(client);
+        when(session.merge(any(Apartment.class))).thenReturn(apartment);
 
-        boolean result = apartmentService.release(apartmentId);
+        boolean result = apartmentService.release(1);
 
         assertTrue(result);
 
-        verify(preparedStatement).setInt(1, apartmentId);
-        verify(preparedStatement, times(2)).executeUpdate();
-        verify(connection).commit();
+        verify(session).beginTransaction();
+        verify(session).remove(client);
+        verify(transaction).commit();
+        verify(session).merge(apartment);
+        verify(session).close();
     }
 
     @Test
-    void getPaginatedAndSortedApartments_ShouldReturnApartmentList() throws SQLException {
-        when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getInt("id")).thenReturn(1);
-        when(resultSet.getInt("client_id")).thenReturn(1);
-        when(resultSet.getDouble("price")).thenReturn(300.0);
-        when(resultSet.getString("status")).thenReturn(ReservationStatus.AVAILABLE.name());
-        when(resultSet.getString("client_name")).thenReturn("Test Client");
-        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+    void givenApartments_WhenPaginatedAndSorted_ThenReturnsCorrectPage() {
+        int page = 1;
+        int size = 5;
+        String sortBy = "price";
+        Apartment apartment = new Apartment(1, 200, ReservationStatus.AVAILABLE, null);
+        List<Apartment> apartments = new ArrayList<>();
+        apartments.add(apartment);
 
-        List<Apartment> apartments = apartmentService.getPaginatedAndSortedApartments(1, 10, "price");
+        when(session.createQuery("FROM Apartment a LEFT JOIN FETCH a.client ORDER BY a." + sortBy, Apartment.class))
+                .thenReturn(query);
+        when(query.setFirstResult(0)).thenReturn(query);
+        when(query.setMaxResults(5)).thenReturn(query);
+        when(query.getResultList()).thenReturn(apartments);
 
-        assertEquals(1, apartments.size());
-        assertEquals(1, apartments.get(0).getId());
-        assertEquals(300.0, apartments.get(0).getPrice());
-        assertEquals("Test Client", apartments.get(0).getClient().getName());
-        assertEquals(ReservationStatus.AVAILABLE, apartments.get(0).getReservationStatus());
+        List<Apartment> result = apartmentService.getPaginatedAndSortedApartments(page, size, sortBy);
+
+        assertEquals(1, result.size());
+        assertEquals(200, result.get(0).getPrice());
+        assertEquals(ReservationStatus.AVAILABLE, result.get(0).getReservationStatus());
     }
 }
